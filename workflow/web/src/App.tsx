@@ -9,27 +9,32 @@ import { RunDetailPage } from "./pages/RunDetailPage";
 import { TemplateMarketPage } from "./pages/TemplateMarketPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { LoginPage } from "./pages/LoginPage";
+import { ErrorBoundary } from "./components/Common/ErrorBoundary";
+import { GlobalErrorHandler } from "./components/Common/GlobalErrorHandler";
 
 export default function App() {
   return (
-    <AuthProvider>
-      <Routes>
-        <Route element={<GuestGuard />}>
-          <Route path="/login" element={<LoginPage />} />
-        </Route>
-        <Route element={<RouteGuard />}>
-          <Route element={<AppLayout />}>
-            <Route path="/workflows" element={<WorkflowListPage />} />
-            <Route path="/runs" element={<RunListPage />} />
-            <Route path="/runs/:runId" element={<RunDetailPage />} />
-            <Route path="/templates" element={<TemplateMarketPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/editor/:workflowId" element={<EditorPage />} />
-            <Route path="/editor/new" element={<EditorPage />} />
+    <ErrorBoundary>
+      <GlobalErrorHandler />
+      <AuthProvider>
+        <Routes>
+          <Route element={<GuestGuard />}>
+            <Route path="/login" element={<LoginPage />} />
           </Route>
-        </Route>
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
-    </AuthProvider>
+          <Route element={<RouteGuard />}>
+            <Route element={<AppLayout />}>
+              <Route path="/workflows" element={<WorkflowListPage />} />
+              <Route path="/runs" element={<RunListPage />} />
+              <Route path="/runs/:runId" element={<RunDetailPage />} />
+              <Route path="/templates" element={<TemplateMarketPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/editor/:workflowId" element={<EditorPage />} />
+              <Route path="/editor/new" element={<EditorPage />} />
+            </Route>
+          </Route>
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }

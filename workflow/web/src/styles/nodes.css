@@ -1,0 +1,28 @@
+﻿/* ===== Canvas Grid Background ===== */
+.canvas-wrapper {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+}
+.canvas-bg {
+  position: absolute;
+  inset: 0;
+  background-color: var(--canvas-bg);
+  background-image:
+    linear-gradient(var(--canvas-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--canvas-grid) 1px, transparent 1px);
+  background-size: 24px 24px;
+  animation: canvas-drift 30s linear infinite;
+}
+.canvas-vignette {
+  position: absolute;
+  inset: 0;
+  background: var(--canvas-vignette);
+  pointer-events: none;
+  z-index: 1;
+}
+.canvas-content {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}

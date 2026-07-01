@@ -27,6 +27,7 @@ workflow/
 ## 快速开始
 
 ```bash
+# 安装依赖
 # 方式一：使用 requirements 锁定文件（推荐，CI/团队一致）
 pip install -r requirements.txt
 pip install -r requirements-dev.txt
@@ -36,6 +37,8 @@ pip install -e ".[dev]"
 
 # 运行测试
 pytest tests/ -v --cov=src/agent_engine
+```
+
 
 # 代码风格检查
 ruff check src/ tests/

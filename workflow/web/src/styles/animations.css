@@ -1,0 +1,98 @@
+﻿/* ===== Animation Keyframes ===== */
+
+/* Node enter (drop from palette) */
+@keyframes node-enter {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.12); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Node breathing glow */
+@keyframes node-breath {
+  0%, 100% { box-shadow: 0 0 6px var(--node-color, var(--node-llm)), 0 0 12px rgba(255,255,255,0.04); }
+  50% { box-shadow: 0 0 14px var(--node-color, var(--node-llm)), 0 0 28px rgba(255,255,255,0.08); }
+}
+
+/* Status badge pulse */
+@keyframes badge-pulse {
+  0%, 100% { box-shadow: 0 0 4px var(--status-running); }
+  50% { box-shadow: 0 0 12px var(--status-running); }
+}
+
+/* Canvas grid drift */
+@keyframes canvas-drift {
+  from { background-position: 0 0; }
+  to { background-position: 24px 24px; }
+}
+
+/* Flow dash animation for connections */
+@keyframes flow-dash {
+  to { stroke-dashoffset: -14; }
+}
+
+/* HUD slide in */
+@keyframes hud-enter {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Success ripple */
+@keyframes ripple-out {
+  0% { transform: scale(1); opacity: 0.7; }
+  100% { transform: scale(6); opacity: 0; }
+}
+
+/* Failure shake */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+/* Page transition */
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes page-exit {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+/* Panel slide */
+@keyframes panel-slide-in {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes panel-slide-in-right {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+/* Empty state stagger */
+@keyframes empty-node-in {
+  from { opacity: 0; transform: scale(0.5); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes empty-conn-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Flow particle opacity */
+@keyframes particle-flow {
+  0%   { opacity: 0; transform: scale(0.3); }
+  15%  { opacity: 1; transform: scale(1); }
+  85%  { opacity: 1; transform: scale(0.8); }
+  100% { opacity: 0; transform: scale(0.3); }
+}
+
+/* Utility classes */
+.animate-node-enter { animation: node-enter 400ms var(--ease-elastic) both; }
+.animate-hud { animation: hud-enter 500ms var(--ease-out-cubic) 300ms both; }
+.animate-page-enter { animation: page-enter 300ms var(--ease-out-cubic) both; }

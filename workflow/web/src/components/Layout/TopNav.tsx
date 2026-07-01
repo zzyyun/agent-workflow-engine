@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 const NAV_ITEMS = [
   { label: "Workflows", path: "/workflows" },
   { label: "Runs", path: "/runs" },
-  { label: "Templates", path: null },
+  { label: "Templates", path: "/templates" },
   { label: "Docs", path: null },
 ];
 

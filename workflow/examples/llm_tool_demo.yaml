@@ -1,0 +1,22 @@
+name: llm_tool_demo
+description: LLM → Tool 串行 demo（DSL 直接定义，无需 Python API 预注册）
+nodes:
+  - id: gen_number
+    type: llm
+    params:
+      # provider: fake 走内置 FakeListChatModel（零依赖），responses 为固定输出序列
+      provider: fake
+      responses: ["10"]
+      prompt_template: "只输出数字 {hint}"
+      output_key: number_str
+  - id: add_one
+    type: tool
+    depends_on: [gen_number]
+    params:
+      # tool 引用 @tool 装饰的对象：module.path:tool_name
+      tool: examples.demo_nodes:add_one
+      # 从 state 读取 LLM 的输出，写入 result
+      input_key: number_str
+      output_key: result
+entry: gen_number
+finish: [add_one]

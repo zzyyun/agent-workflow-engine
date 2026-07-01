@@ -84,6 +84,8 @@ class WorkflowEngine:
         self._compiled = None
         # 动态生成的 state TypedDict schema（带 reducer），首次编译时创建
         self._state_schema = None
+        # LangGraph checkpointer（持久化/续跑用），None 表示无持久化
+        self._checkpointer = None
 
     # ------------------------------------------------------------------ #
     # 属性
@@ -102,6 +104,27 @@ class WorkflowEngine:
     def has_node(self, name: str) -> bool:
         """判断指定节点是否已注册。"""
         return name in self._nodes
+
+    def with_checkpointer(self, checkpointer):
+        """为引擎挂载 LangGraph checkpointer，启用断点持久化与续跑。
+
+        Args:
+            checkpointer: ``langgraph.checkpoint.*`` 的 saver 实例（如
+                ``MemorySaver`` / ``PostgresSaver``），或 ``None`` 取消挂载。
+
+        Returns:
+            self，便于链式调用。
+
+        Note:
+            挂载会失效已编译的图缓存，下次执行时按新 checkpointer 重新编译。
+            真正的 thread 标识通过 ``invoke(stream)`` 的 ``config['configurable']['thread_id']``
+            传入，本方法只负责把 saver 接入图。
+        """
+        self._checkpointer = checkpointer
+        # 使旧编译产物失效
+        self._compiled = None
+        logger.debug("挂载 checkpointer: %s", type(checkpointer).__name__ if checkpointer else None)
+        return self
 
     # ------------------------------------------------------------------ #
     # 节点注册
@@ -168,8 +191,7 @@ class WorkflowEngine:
         if source == START:
             if self._entry_point is not None and self._entry_point != target:
                 raise EdgeError(
-                    f"入口已设置为 {self._entry_point!r}，"
-                    f"不能再添加 add_edge(START, {target!r})"
+                    f"入口已设置为 {self._entry_point!r}，不能再添加 add_edge(START, {target!r})"
                 )
             self._entry_point = target
         elif source not in self._nodes:
@@ -207,9 +229,7 @@ class WorkflowEngine:
         if path_map:
             for key, dest in path_map.items():
                 if dest != END and dest not in self._nodes:
-                    raise NodeNotFoundError(
-                        f"path_map 中目标节点 {dest!r} (key={key!r}) 未注册"
-                    )
+                    raise NodeNotFoundError(f"path_map 中目标节点 {dest!r} (key={key!r}) 未注册")
 
         self._conditional_edges.append((source, path, path_map))
         logger.debug("添加条件边: source=%s, path_map=%s", source, bool(path_map))
@@ -237,8 +257,7 @@ class WorkflowEngine:
         # 入口表达方式统一为 ``_entry_point``，避免 add_edge(START, X) 与 set_entry_point 出现歧义
         if self._entry_point is not None and self._entry_point != name:
             raise EdgeError(
-                f"入口已设置为 {self._entry_point!r}，"
-                f"不能再调用 set_entry_point({name!r})"
+                f"入口已设置为 {self._entry_point!r}，不能再调用 set_entry_point({name!r})"
             )
         self._entry_point = name
         logger.debug("设置入口: %s", name)
@@ -299,8 +318,9 @@ class WorkflowEngine:
             graph.add_edge(finish, END)
 
         # 新版 LangGraph 不再在 compile() 上接受 recursion_limit，
-        # 改为在 invoke/stream 时通过 config 传入（见 _make_config）
-        self._compiled = graph.compile()
+        # 改为在 invoke/stream 时通过 config 传入（见 _make_config）。
+        # checkpointer 为 None 时退化为无持久化编译，保持向后兼容。
+        self._compiled = graph.compile(checkpointer=self._checkpointer)
         logger.info(
             "WorkflowEngine 编译完成: 节点=%d, 边=%d, 条件边=%d, recursion_limit=%d",
             len(self._nodes),
@@ -311,7 +331,10 @@ class WorkflowEngine:
         return self._compiled
 
     def invoke(
-        self, state: dict[str, Any] | None = None, config: dict[str, Any] | None = None, **kwargs: Any
+        self,
+        state: dict[str, Any] | None = None,
+        config: dict[str, Any] | None = None,
+        **kwargs: Any,
     ) -> dict[str, Any]:
         """同步执行工作流，返回最终 state。
 

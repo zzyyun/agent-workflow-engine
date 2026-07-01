@@ -25,13 +25,9 @@ class EngineConfig:
     def __post_init__(self) -> None:
         """校验配置参数合法性。"""
         if self.recursion_limit <= 0:
-            raise ValueError(
-                f"recursion_limit 必须为正整数, 实际值: {self.recursion_limit}"
-            )
+            raise ValueError(f"recursion_limit 必须为正整数, 实际值: {self.recursion_limit}")
         if self.max_concurrency <= 0:
-            raise ValueError(
-                f"max_concurrency 必须为正整数, 实际值: {self.max_concurrency}"
-            )
+            raise ValueError(f"max_concurrency 必须为正整数, 实际值: {self.max_concurrency}")
 
 
 class EngineError(Exception):

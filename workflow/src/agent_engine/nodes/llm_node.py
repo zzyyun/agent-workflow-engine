@@ -63,9 +63,7 @@ class LLMNode(NodeAdapter):
         content = ai_message.content
         if isinstance(content, list):
             # 处理 LangChain 1.x 的 content blocks（list[dict]）
-            content = "".join(
-                block.get("text", "") for block in content if isinstance(block, dict)
-            )
+            content = "".join(block.get("text", "") for block in content if isinstance(block, dict))
         return {**state, self.output_key: content}
 
     def __repr__(self) -> str:

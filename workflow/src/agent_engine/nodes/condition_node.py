@@ -53,9 +53,7 @@ class ConditionNode(NodeAdapter):
             false_branch: 条件为 False 时返回的路由键（默认 "false"）。
         """
         if not callable(condition):
-            raise TypeError(
-                f"condition 必须是可调用对象，实际类型: {type(condition).__name__}"
-            )
+            raise TypeError(f"condition 必须是可调用对象，实际类型: {type(condition).__name__}")
         self.condition = condition
         self.true_branch = true_branch
         self.false_branch = false_branch
@@ -80,9 +78,7 @@ class ConditionNode(NodeAdapter):
 
     def __repr__(self) -> str:
         """可读字符串表示。"""
-        return (
-            f"ConditionNode(true={self.true_branch!r}, false={self.false_branch!r})"
-        )
+        return f"ConditionNode(true={self.true_branch!r}, false={self.false_branch!r})"
 
 
 __all__ = ["ConditionNode", "ConditionFunc"]

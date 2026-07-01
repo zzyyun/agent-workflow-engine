@@ -21,9 +21,7 @@ class TestEngineConfig:
 
     def test_custom_values(self) -> None:
         """可自定义配置值。"""
-        config = EngineConfig(
-            recursion_limit=50, max_concurrency=20, raise_on_cycle=False
-        )
+        config = EngineConfig(recursion_limit=50, max_concurrency=20, raise_on_cycle=False)
         assert config.recursion_limit == 50
         assert config.max_concurrency == 20
         assert config.raise_on_cycle is False

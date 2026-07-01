@@ -48,9 +48,7 @@ def load_dsl(source: PathLike) -> WorkflowDSL:
     except yaml.YAMLError as e:
         raise DSLError(f"YAML 解析失败: {e}") from e
     if not isinstance(raw, dict):
-        raise DSLError(
-            f"YAML 顶层必须是字典，实际类型: {type(raw).__name__}"
-        )
+        raise DSLError(f"YAML 顶层必须是字典，实际类型: {type(raw).__name__}")
     try:
         dsl = WorkflowDSL.model_validate(raw)
     except ValidationError as e:
@@ -102,40 +100,26 @@ def _format_pydantic_error(err: ValidationError) -> str:
     return "DSL schema 校验失败:\n" + "\n".join(parts)
 
 
-def _check_entry_and_finish(
-    dsl: WorkflowDSL, node_ids: set[str]
-) -> None:
+def _check_entry_and_finish(dsl: WorkflowDSL, node_ids: set[str]) -> None:
     """入口与结束节点必须存在。"""
     if dsl.entry not in node_ids:
-        raise DSLError(
-            f"工作流 '{dsl.name}': 入口节点 {dsl.entry!r} 未在 nodes 中定义"
-        )
+        raise DSLError(f"工作流 '{dsl.name}': 入口节点 {dsl.entry!r} 未在 nodes 中定义")
     missing_finish = [f for f in dsl.finish if f not in node_ids]
     if missing_finish:
-        raise DSLError(
-            f"工作流 '{dsl.name}': 结束节点 {missing_finish} 未在 nodes 中定义"
-        )
+        raise DSLError(f"工作流 '{dsl.name}': 结束节点 {missing_finish} 未在 nodes 中定义")
 
 
-def _check_depends_on(
-    dsl: WorkflowDSL, node_ids: set[str]
-) -> None:
+def _check_depends_on(dsl: WorkflowDSL, node_ids: set[str]) -> None:
     """每个节点的 depends_on 必须指向已注册节点。"""
     for node in dsl.nodes:
         for dep in node.depends_on:
             if dep == node.id:
-                raise DSLError(
-                    f"节点 {node.id!r}: depends_on 不能包含自身"
-                )
+                raise DSLError(f"节点 {node.id!r}: depends_on 不能包含自身")
             if dep not in node_ids:
-                raise DSLError(
-                    f"节点 {node.id!r}: depends_on 引用了不存在的节点 {dep!r}"
-                )
+                raise DSLError(f"节点 {node.id!r}: depends_on 引用了不存在的节点 {dep!r}")
 
 
-def _check_edge_endpoints(
-    dsl: WorkflowDSL, node_ids: set[str]
-) -> None:
+def _check_edge_endpoints(dsl: WorkflowDSL, node_ids: set[str]) -> None:
     """显式边的源/目标必须存在（START/END 保留字除外）。"""
     for i, edge in enumerate(dsl.edges):
         _check_edge_endpoint(dsl, edge, "source", edge.source, node_ids, i)
@@ -160,9 +144,7 @@ def _check_edge_endpoint(
         )
 
 
-def _check_no_cycles(
-    dsl: WorkflowDSL, node_ids: set[str]
-) -> None:
+def _check_no_cycles(dsl: WorkflowDSL, node_ids: set[str]) -> None:
     """检测依赖关系是否形成循环（DFS 三色标记法）。
 
     边的方向约定（执行流方向）：
@@ -193,10 +175,7 @@ def _check_no_cycles(
                 # 找到环：从 nxt 到当前 node 截取路径段
                 cycle_start = path.index(nxt)
                 cycle = path[cycle_start:] + [nxt]
-                raise DSLError(
-                    f"工作流 '{dsl.name}': 检测到循环依赖: "
-                    f"{' -> '.join(cycle)}"
-                )
+                raise DSLError(f"工作流 '{dsl.name}': 检测到循环依赖: {' -> '.join(cycle)}")
             if color[nxt] == WHITE:
                 dfs(nxt, path)
         path.pop()

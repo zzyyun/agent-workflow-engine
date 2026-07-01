@@ -39,9 +39,7 @@ class TestLLMToolConditionIntegration:
             llm=llm,
             output_key="number_str",
         )
-        tool_node = ToolNode(
-            tool=parse_and_add_one, input_key="number_str", output_key="result"
-        )
+        tool_node = ToolNode(tool=parse_and_add_one, input_key="number_str", output_key="result")
 
         engine = WorkflowEngine()
         engine.add_node("llm", llm_node)
@@ -64,12 +62,8 @@ class TestLLMToolConditionIntegration:
             llm=llm,
             output_key="reply",
         )
-        long_tool = ToolNode(
-            tool=is_long_text, input_key="reply", output_key="length_info"
-        )
-        upper_tool = ToolNode(
-            tool=to_upper, input_key="reply", output_key="uppered"
-        )
+        long_tool = ToolNode(tool=is_long_text, input_key="reply", output_key="length_info")
+        upper_tool = ToolNode(tool=to_upper, input_key="reply", output_key="uppered")
         cond = ConditionNode(
             condition=lambda s: len(s["reply"]) > 8,
             true_branch="long",
@@ -101,9 +95,8 @@ class TestLLMToolConditionIntegration:
             llm=llm,
             output_key="raw",
         )
-        upper_node = ToolNode(
-            tool=to_upper, input_key="raw", output_key="processed"
-        )
+        upper_node = ToolNode(tool=to_upper, input_key="raw", output_key="processed")
+
         # 验证节点：检查 processed 是否真的大写
         def validate(state: dict) -> dict:
             return {**state, "validated": state.get("processed", "").isupper()}

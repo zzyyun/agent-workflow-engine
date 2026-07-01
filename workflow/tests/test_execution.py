@@ -246,14 +246,11 @@ class TestLargeGraph:
         engine.add_node("start", lambda s: {"value": s.get("value", 1)})
         # 4 个并行分支，每个 2 个节点 (branch -> leaf)；分支写不同 key
         for i in range(4):
-            engine.add_node(
-                f"branch_{i}", lambda s, i=i: {f"b{i}": s["value"] * 2}
-            )
-            engine.add_node(
-                f"leaf_{i}", lambda s, i=i: {f"l{i}": s[f"b{i}"] + i}
-            )
+            engine.add_node(f"branch_{i}", lambda s, i=i: {f"b{i}": s["value"] * 2})
+            engine.add_node(f"leaf_{i}", lambda s, i=i: {f"l{i}": s[f"b{i}"] + i})
             engine.add_edge("start", f"branch_{i}")
             engine.add_edge(f"branch_{i}", f"leaf_{i}")
+
         # 合并节点：累加所有 leaf 的结果
         def merge(state: dict) -> dict:
             total = sum(state.get(f"l{i}", 0) for i in range(4))

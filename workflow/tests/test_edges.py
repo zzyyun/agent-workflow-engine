@@ -130,3 +130,48 @@ class TestEntryAndFinish:
         engine.set_entry_point("a")
         # 不调用 set_finish_point，编译应通过
         engine.compile()  # 不抛错即通过
+
+    def test_compile_without_set_entry_point_message(self) -> None:
+        """未设置入口时编译错误的提示应同时提到两种入口表达方式。"""
+        engine = _make_engine()
+        engine.set_finish_point("a")
+        with pytest.raises(EdgeError) as exc_info:
+            engine.compile()
+        # 错误信息应同时提示 set_entry_point 和 add_edge(START, ...) 两种入口设置方式
+        msg = str(exc_info.value)
+        assert "set_entry_point" in msg
+        assert "add_edge(START" in msg
+
+    def test_add_edge_from_start_is_equivalent_to_set_entry_point(self) -> None:
+        """add_edge(START, "a") 等价于 set_entry_point("a")，会自动设置 _entry_point。"""
+        engine = _make_engine()
+        engine.add_edge(START, "a")
+        # 不显式调用 set_entry_point，编译应能识别入口
+        engine.compile()  # 不抛错即通过
+
+    def test_set_entry_point_after_add_edge_from_start_same_target_ok(self) -> None:
+        """先 add_edge(START, "a") 后 set_entry_point("a") 不报错（一致）。"""
+        engine = _make_engine()
+        engine.add_edge(START, "a")
+        engine.set_entry_point("a")  # 一致，不抛错
+
+    def test_set_entry_point_after_add_edge_from_start_conflict_raises(self) -> None:
+        """先 add_edge(START, "a") 后 set_entry_point("b") 应抛 EdgeError。"""
+        engine = _make_engine()
+        engine.add_edge(START, "a")
+        with pytest.raises(EdgeError, match="入口已设置为"):
+            engine.set_entry_point("b")
+
+    def test_add_edge_from_start_after_set_entry_point_conflict_raises(self) -> None:
+        """先 set_entry_point("a") 后 add_edge(START, "b") 应抛 EdgeError。"""
+        engine = _make_engine()
+        engine.set_entry_point("a")
+        with pytest.raises(EdgeError, match="入口已设置"):
+            engine.add_edge(START, "b")
+
+    def test_add_edge_from_start_after_set_entry_point_same_target_ok(self) -> None:
+        """先 set_entry_point("a") 后 add_edge(START, "a") 不报错（idempotent）。"""
+        engine = _make_engine()
+        engine.set_entry_point("a")
+        engine.add_edge(START, "a")  # 同名，不抛错
+        engine.compile()  # 编译应成功

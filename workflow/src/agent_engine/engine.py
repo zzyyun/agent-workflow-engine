@@ -4,7 +4,8 @@
     1. 屏蔽 LangGraph 的实现细节，对外提供稳定的 Pythonic API。
     2. 统一管理节点、边、条件边，并做引用完整性校验。
     3. 通过 ``EngineConfig`` 暴露 ``recursion_limit`` 与 ``max_concurrency``。
-    4. 在 ``compile()`` 后才能 ``invoke()`` / ``stream()``，避免半成品图被误执行。
+    4. ``invoke()`` / ``stream()`` 会在首次执行时按需自动调用 ``compile()``；
+       也可手动提前 ``compile()`` 以提前暴露图结构错误（如未设置入口节点）。
 """
 
 from __future__ import annotations
@@ -142,16 +143,29 @@ class WorkflowEngine:
         """添加一条固定边（source -> target）。
 
         Args:
-            source: 起始节点名；可传 ``START`` 表示入口。
+            source: 起始节点名；可传 ``START`` 表示入口（与 ``set_entry_point()`` 等价）。
             target: 目标节点名；可传 ``END`` 表示结束。
 
         Returns:
             self，便于链式调用。
+
+        Raises:
+            EdgeError: 入口已通过不同值设置（与 ``set_entry_point()`` 或先前的 ``START`` 边冲突）。
+            NodeNotFoundError: source/target 节点未注册。
+            ValueError: source/target 不是合法字符串。
         """
         self._validate_edge_endpoint(source)
         self._validate_edge_endpoint(target)
-        # 边允许从 START 出发，否则要求源节点已注册
-        if source != START and source not in self._nodes:
+        # ``add_edge(START, X)`` 与 ``set_entry_point(X)`` 等价，统一记入 _entry_point
+        if source == START:
+            if self._entry_point is not None and self._entry_point != target:
+                raise EdgeError(
+                    f"入口已设置为 {self._entry_point!r}，"
+                    f"不能再添加 add_edge(START, {target!r})"
+                )
+            self._entry_point = target
+        elif source not in self._nodes:
+            # 边允许从 START 出发，否则要求源节点已注册
             raise NodeNotFoundError(f"源节点 {source!r} 未注册")
         # 边允许到 END，否则要求目标节点已注册
         if target != END and target not in self._nodes:
@@ -200,11 +214,24 @@ class WorkflowEngine:
     def set_entry_point(self, name: str) -> WorkflowEngine:
         """设置工作流的入口节点。
 
+        与 ``add_edge(START, name)`` 等价——两种写法可以任选其一，
+        重复设置同一入口不会报错，但设置为不同入口会抛 ``EdgeError``。
+
         Args:
             name: 入口节点名（必须已注册）。
+
+        Raises:
+            NodeNotFoundError: 入口节点未注册。
+            EdgeError: 入口已通过其他值设置（与先前的 ``set_entry_point()`` 或 ``add_edge(START, ...)`` 冲突）。
         """
         if name not in self._nodes:
             raise NodeNotFoundError(f"入口节点 {name!r} 未注册")
+        # 入口表达方式统一为 ``_entry_point``，避免 add_edge(START, X) 与 set_entry_point 出现歧义
+        if self._entry_point is not None and self._entry_point != name:
+            raise EdgeError(
+                f"入口已设置为 {self._entry_point!r}，"
+                f"不能再调用 set_entry_point({name!r})"
+            )
         self._entry_point = name
         logger.debug("设置入口: %s", name)
         return self
@@ -233,7 +260,7 @@ class WorkflowEngine:
             EdgeError: 入口节点未设置或图结构不合法。
         """
         if self._entry_point is None:
-            raise EdgeError("尚未调用 set_entry_point() 设置入口节点")
+            raise EdgeError("尚未调用 set_entry_point() 或 add_edge(START, ...) 设置入口节点")
         if not self._nodes:
             raise EdgeError("图中没有节点，无法编译")
         # 若无显式 finish_point 但有条件边到 END，仍可编译
@@ -249,7 +276,8 @@ class WorkflowEngine:
         # 注册普通边
         for src, dst in self._edges:
             if src == START:
-                # 入口已用 add_edge(START, entry) 表达，避免重复
+                # 入口边已通过上面的 graph.add_edge(START, self._entry_point) 表达，
+                # 跳过避免 LangGraph 报重复边。
                 continue
             graph.add_edge(src, dst)
         # 注册条件边

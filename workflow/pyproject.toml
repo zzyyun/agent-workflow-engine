@@ -1,0 +1,59 @@
+[build-system]
+requires = ["setuptools>=80", "wheel>=0.45"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agent-workflow-engine"
+version = "0.1.0"
+description = "AI Agent 工作流引擎（基于 LangGraph StateGraph）"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "yun" }]
+
+# 核心依赖（宽松范围：允许同一主版本内的最新稳定版）
+# 精确版本见 requirements.txt
+dependencies = [
+    "langgraph>=1.2.7,<2.0",
+    "langchain-core>=1.4.8,<2.0",
+    "pydantic>=2.13,<3.0",
+    "typing-extensions>=4.15",
+]
+
+[project.optional-dependencies]
+# 开发依赖（宽松范围）
+# 精确版本见 requirements-dev.txt
+dev = [
+    "pytest>=9.1",
+    "pytest-asyncio>=1.4",
+    "pytest-cov>=7.1",
+    "ruff>=0.15",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+minversion = "9.0"
+addopts = "-ra -q"
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+# 覆盖率配置
+[tool.coverage.run]
+source = ["src/agent_engine"]
+omit = ["*/tests/*", "*/__init__.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+fail_under = 80
+
+# 代码风格
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP", "B"]
+ignore = ["E501"]

@@ -1,5 +1,6 @@
 [build-system]
 requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=80", "wheel>=0.45"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -26,6 +27,25 @@ dev = [
     "pytest-asyncio>=0.23",
     "pytest-cov>=4.1",
     "ruff>=0.5",
+# 核心依赖（宽松范围：允许同一主版本内的最新稳定版）
+# 精确版本见 requirements.txt
+dependencies = [
+    "langgraph>=1.2.7,<2.0",
+    "langchain-core>=1.4.8,<2.0",
+    "langchain>=1.0",
+    "pydantic>=2.13,<3.0",
+    "typing-extensions>=4.15",
+    "typer>=0.15",
+]
+
+[project.optional-dependencies]
+# 开发依赖（宽松范围）
+# 精确版本见 requirements-dev.txt
+dev = [
+    "pytest>=9.1",
+    "pytest-asyncio>=1.4",
+    "pytest-cov>=7.1",
+    "ruff>=0.15",
 ]
 
 [tool.setuptools.packages.find]
@@ -33,6 +53,7 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 minversion = "8.0"
+minversion = "9.0"
 addopts = "-ra -q"
 testpaths = ["tests"]
 pythonpath = ["src"]
@@ -54,4 +75,5 @@ target-version = "py310"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "W", "UP", "B"]
+ignore = ["E501"]
 ignore = ["E501"]

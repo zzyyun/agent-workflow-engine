@@ -1,8 +1,6 @@
-﻿import { Tag, Divider } from "antd";
-import { ClockCircleOutlined, ThunderboltOutlined, FileTextOutlined } from "@ant-design/icons";
+﻿import { Tag, Divider, Button, Modal } from "antd";
+import { ReloadOutlined, ClockCircleOutlined, ThunderboltOutlined, FileTextOutlined } from "@ant-design/icons";
 import type { NodeExecution } from "../../api/runs";
-
-
 
 const STATUS_META: Record<string, { label: string; color: string }> = {
   pending:         { label: "Pending",  color: "#FBBF24" },
@@ -34,7 +32,13 @@ function JsonBlock({ data }: { data: unknown }) {
   );
 }
 
-export function NodeExecutionDetail({ execution }: { execution: NodeExecution | null }) {
+interface NodeExecutionDetailProps {
+  execution: NodeExecution | null;
+  
+  onRetryFromNode?: (nodeId: string) => void;
+}
+
+export function NodeExecutionDetail({ execution, onRetryFromNode }: NodeExecutionDetailProps) {
   if (!execution) {
     return (
       <div style={{ padding: 32, textAlign: "center", color: "var(--text-muted)", fontSize: 13 }}>
@@ -46,6 +50,22 @@ export function NodeExecutionDetail({ execution }: { execution: NodeExecution | 
 
   const statusMeta = STATUS_META[execution.status] || { label: execution.status, color: "#6B7280" };
 
+  const handleRetryFromClick = () => {
+    if (!execution) return;
+    Modal.confirm({
+      title: "Retry from this node?",
+      content: `This will create a new run starting from "${execution.nodeName}". The failed node and all subsequent nodes will be re-executed.`,
+      okText: "Retry from here",
+      okButtonProps: { danger: true, icon: <ReloadOutlined /> },
+      cancelText: "Cancel",
+      onOk: () => {
+        if (onRetryFromNode && execution) {
+          onRetryFromNode(execution.nodeId);
+        }
+      },
+    });
+  };
+
   return (
     <div style={{ padding: 16, fontSize: 13, overflow: "auto", height: "100%" }}>
       {/* Header */}
@@ -53,20 +73,33 @@ export function NodeExecutionDetail({ execution }: { execution: NodeExecution | 
         <div>
           <div style={{ fontWeight: 600, fontSize: 14, color: "var(--text-primary)" }}>{execution.nodeName}</div>
           <div style={{ fontSize: 11, color: "var(--text-muted)", fontFamily: "'JetBrains Mono', monospace" }}>
-            {execution.nodeId} · {execution.nodeType}
+            {execution.nodeId} - {execution.nodeType}
           </div>
         </div>
-        <div style={{ marginLeft: "auto" }}>
+        <div style={{ marginLeft: "auto", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
           <Tag color={statusMeta.color} style={{ borderRadius: 4, fontSize: 11 }}>{statusMeta.label}</Tag>
+          {execution.status === "failed" && onRetryFromNode && (
+            <Button
+              type="text"
+              size="small"
+              icon={<ReloadOutlined />}
+              onClick={handleRetryFromClick}
+              style={{ color: "#EF4444", fontSize: 11, padding: "0 4px" }}
+            >
+              Retry from here
+            </Button>
+          )}
         </div>
       </div>
 
       {/* Timing */}
       <div style={{ display: "flex", gap: 16, marginBottom: 16, fontSize: 12, color: "var(--text-secondary)" }}>
-        <div>
-          <ClockCircleOutlined style={{ marginRight: 4, fontSize: 11 }} />
-          {execution.startTime ? new Date(execution.startTime).toLocaleTimeString() : "—"}
-        </div>
+        {execution.startTime && (
+          <div>
+            <ClockCircleOutlined style={{ marginRight: 4, fontSize: 11 }} />
+            {new Date(execution.startTime).toLocaleTimeString()}
+          </div>
+        )}
         <div>
           <ThunderboltOutlined style={{ marginRight: 4, fontSize: 11 }} />
           {formatDuration(execution.duration)}
@@ -99,9 +132,11 @@ export function NodeExecutionDetail({ execution }: { execution: NodeExecution | 
       <div style={{ marginBottom: 16 }}>
         <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-secondary)", marginBottom: 6, display: "flex", alignItems: "center", gap: 4 }}>
           <span>Input</span>
-          <span style={{ fontWeight: 400, color: "var(--text-muted)" }}>
-            ({Object.keys(execution.input || {}).length} fields)
-          </span>
+          {execution.input && (
+            <span style={{ fontWeight: 400, color: "var(--text-muted)" }}>
+              ({Object.keys(execution.input).length} fields)
+            </span>
+          )}
         </div>
         <JsonBlock data={execution.input} />
       </div>

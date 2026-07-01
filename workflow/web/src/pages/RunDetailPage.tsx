@@ -1,7 +1,8 @@
 ﻿import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Button, Tag, message, Spin, Alert, Tooltip, Segmented } from "antd";
-import {
+ import { Button, Tag, message, Spin, Alert, Tooltip, Segmented } from "antd";
+ import { Modal } from "antd";
+ import {
   ArrowLeftOutlined,
   ReloadOutlined,
   StopOutlined,
@@ -10,7 +11,8 @@ import {
   UnorderedListOutlined,
   RightOutlined,
 } from "@ant-design/icons";
-import { getRun, retryRun, cancelRun, type RunDetail, type NodeExecution } from "../api/runs";
+ import { getRun, retryRun, cancelRun, type RunDetail, type NodeExecution } from "../api/runs";
+ import { retryFromNode } from "../api/runs";
 import { RunDagView } from "../components/Runs/RunDagView";
 import { NodeExecutionDetail } from "../components/Runs/NodeExecutionDetail";
 
@@ -109,7 +111,14 @@ export function RunDetailPage() {
 
   useEffect(() => { loadRun(); }, [loadRun]);
 
-  const handleRetry = async () => {
+ const handleRetry = async () => {
+    Modal.confirm({
+      title: "Retry this run?",
+      content: "A new run will be created and executed from the beginning.",
+      okText: "Yes, retry",
+      okButtonProps: { icon: <ReloadOutlined /> },
+      cancelText: "No",
+      onOk: async () => {
     if (!runId) return;
     setActionLoading("retry");
     try {
@@ -121,9 +130,18 @@ export function RunDetailPage() {
     } finally {
       setActionLoading(null);
     }
+      },
+    });
   };
 
-  const handleCancel = async () => {
+ const handleCancel = async () => {
+    Modal.confirm({
+      title: "Cancel this run?",
+      content: "The current execution will be stopped. In-progress nodes will be marked as canceled.",
+      okText: "Yes, cancel",
+      okButtonProps: { danger: true },
+      cancelText: "No",
+      onOk: async () => {
     if (!runId) return;
     setActionLoading("cancel");
     try {
@@ -132,6 +150,21 @@ export function RunDetailPage() {
       loadRun();
     } catch {
       message.error("Failed to cancel");
+    } finally {
+      setActionLoading(null);
+    }
+      },
+    });
+ };
+  const handleRetryFromNode = async (nodeId: string) => {
+    if (!runId) return;
+    setActionLoading("retryFromNode");
+    try {
+      const result = await retryFromNode(runId, nodeId);
+      message.success("Retry from node initiated");
+      navigate(`/runs/${result.newRunId}`);
+    } catch {
+      message.error("Failed to retry from node");
     } finally {
       setActionLoading(null);
     }
@@ -267,7 +300,11 @@ export function RunDetailPage() {
             )}
           </div>
           <div style={{ flex: 1, overflow: "auto" }}>
-            <NodeExecutionDetail execution={selectedExecution} />
+            <NodeExecutionDetail
+              execution={selectedExecution}
+              
+              onRetryFromNode={handleRetryFromNode}
+            />
           </div>
         </div>
       </div>

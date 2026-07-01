@@ -1,0 +1,893 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Workflow — Design Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+/* ===== Design Tokens ===== */
+:root {
+  --canvas-bg: #0F172A;
+  --canvas-grid: #1E293B;
+  --canvas-vignette: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.45) 100%);
+  --shell-bg: #F8FAFC;
+  --shell-surface: #FFFFFF;
+  --shell-border: #E2E8F0;
+  --text-primary: #0F172A;
+  --text-secondary: #64748B;
+  --text-muted: #94A3B8;
+  --primary: #818CF8;
+  --primary-glow: 0 0 24px rgba(129,140,248,0.5);
+  --accent: #22D3EE;
+  --accent-glow: 0 0 32px rgba(34,211,238,0.4);
+  --success: #34D399;
+  --error: #FB7185;
+  --warning: #FBBF24;
+  --ease-out-cubic: cubic-bezier(0.33, 1, 0.68, 1);
+  --ease-elastic: cubic-bezier(0.5, 1.75, 0.5, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  /* Node colors */
+  --node-llm: #818CF8;
+  --node-tool: #FBBF24;
+  --node-cond: #34D399;
+  --node-loop: #A78BFA;
+  --node-retriever: #22D3EE;
+  --node-approval: #FB7185;
+  --node-http: #2DD4BF;
+  --node-sub: #A8A29E;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--shell-bg);
+  color: var(--text-primary);
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* ===== Top Nav ===== */
+.nav {
+  height: 40px;
+  background: var(--shell-surface);
+  border-bottom: 1px solid var(--shell-border);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 20px;
+  font-size: 13px;
+  z-index: 100;
+  position: relative;
+}
+.nav-logo {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--primary); }
+.nav-links { display: flex; gap: 16px; }
+.nav-links a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  padding: 2px 8px;
+  border-radius: 4px;
+  transition: all 200ms var(--ease-out-cubic);
+}
+.nav-links a:hover { color: var(--text-primary); background: #F1F5F9; }
+.nav-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+.avatar {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-size: 12px; font-weight: 600;
+}
+
+/* ===== Main Layout ===== */
+.main {
+  display: flex;
+  height: calc(100vh - 40px);
+  position: relative;
+}
+.canvas-area {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+.canvas-bg {
+  position: absolute;
+  inset: 0;
+  background-color: var(--canvas-bg);
+  background-image:
+    linear-gradient(var(--canvas-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--canvas-grid) 1px, transparent 1px);
+  background-size: 24px 24px;
+  animation: canvas-drift 30s linear infinite;
+}
+@keyframes canvas-drift {
+  0% { background-position: 0 0; }
+  100% { background-position: 24px 24px; }
+}
+.canvas-vignette {
+  position: absolute;
+  inset: 0;
+  background: var(--canvas-vignette);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ===== Canvas Content ===== */
+.canvas-content {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+
+/* ===== Panel Toggle Buttons ===== */
+.panel-toggle {
+  position: absolute;
+  z-index: 10;
+  width: 32px; height: 32px;
+  background: var(--shell-surface);
+  border: 1px solid var(--shell-border);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--text-secondary);
+  transition: all 200ms var(--ease-out-cubic);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.panel-toggle:hover {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+  box-shadow: var(--primary-glow);
+}
+.panel-toggle.left { top: 12px; left: 12px; }
+.panel-toggle.right { top: 12px; right: 12px; }
+
+/* ===== Node Styles ===== */
+.node-container {
+  position: absolute;
+  cursor: grab;
+  user-select: none;
+  animation: node-enter 400ms var(--ease-elastic) both;
+}
+@keyframes node-enter {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.12); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.node {
+  width: 168px;
+  background: #1E293B;
+  border: 1.5px solid;
+  border-radius: 12px;
+  padding: 14px 16px;
+  transition: all 300ms var(--ease-out-cubic);
+  position: relative;
+  overflow: hidden;
+}
+.node::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  opacity: 0;
+  transition: opacity 300ms;
+}
+.node:hover::before {
+  opacity: 1;
+  background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.06) 100%);
+}
+.node.breathing {
+  animation: node-breath 2.5s ease-in-out infinite;
+}
+@keyframes node-breath {
+  0%, 100% { box-shadow: 0 0 6px var(--node-color), 0 0 12px rgba(255,255,255,0.04); }
+  50% { box-shadow: 0 0 14px var(--node-color), 0 0 28px rgba(255,255,255,0.08); }
+}
+.node-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.node-icon {
+  width: 24px; height: 24px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center; justify-content: center;
+  font-size: 13px;
+}
+.node-name {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #F1F5F9;
+}
+.node-desc {
+  font-size: 11px;
+  color: #64748B;
+  line-height: 1.4;
+}
+.node-badge {
+  position: absolute;
+  top: -4px; right: -4px;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  border: 2px solid #1E293B;
+  opacity: 0;
+  transition: all 300ms var(--ease-out-cubic);
+}
+.node-badge.success { opacity: 1; background: var(--success); }
+.node-badge.running { opacity: 1; background: var(--accent); animation: badge-pulse 1s ease-in-out infinite; }
+.node-badge.failed { opacity: 1; background: var(--error); }
+@keyframes badge-pulse {
+  0%, 100% { box-shadow: 0 0 4px var(--accent); }
+  50% { box-shadow: 0 0 12px var(--accent); }
+}
+/* Node type colors */
+.node-llm { --node-color: var(--node-llm); border-color: var(--node-llm); }
+.node-llm .node-icon { background: rgba(129,140,248,0.2); color: var(--node-llm); }
+.node-tool { --node-color: var(--node-tool); border-color: var(--node-tool); }
+.node-tool .node-icon { background: rgba(251,191,36,0.2); color: var(--node-tool); }
+.node-cond { --node-color: var(--node-cond); border-color: var(--node-cond); }
+.node-cond .node-icon { background: rgba(52,211,153,0.2); color: var(--node-cond); }
+.node-loop { --node-color: var(--node-loop); border-color: var(--node-loop); }
+.node-loop .node-icon { background: rgba(167,139,250,0.2); color: var(--node-loop); }
+.node-retriever { --node-color: var(--node-retriever); border-color: var(--node-retriever); }
+.node-retriever .node-icon { background: rgba(34,211,238,0.2); color: var(--node-retriever); }
+
+/* ===== SVG Connections ===== */
+.connections-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+.conn-line {
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  transition: stroke 400ms var(--ease-in-out);
+}
+.conn-line.idle { stroke: rgba(148,163,184,0.2); }
+.conn-line.active { stroke: rgba(129,140,248,0.5); stroke-width: 2.5; }
+.conn-line.flowing {
+  stroke: rgba(129,140,248,0.7);
+  stroke-width: 3;
+  stroke-dasharray: 8 6;
+  animation: flow-dash 1s linear infinite;
+}
+@keyframes flow-dash {
+  to { stroke-dashoffset: -14; }
+}
+
+/* ===== Flow Particles ===== */
+.flow-particle {
+  position: absolute;
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* ===== HUD ===== */
+.hud {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  z-index: 10;
+  background: rgba(15,23,42,0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(148,163,184,0.15);
+  border-radius: 10px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 12px;
+  color: #94A3B8;
+  animation: hud-enter 500ms var(--ease-out-cubic) 300ms both;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+}
+@keyframes hud-enter {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.hud-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.hud-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+}
+.hud-dot.green { background: var(--success); box-shadow: 0 0 6px var(--success); }
+.hud-dot.blue { background: var(--accent); animation: badge-pulse 1s ease-in-out infinite; }
+
+/* ===== Status Tooltip ===== */
+.tooltip {
+  position: absolute;
+  background: rgba(15,23,42,0.95);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(148,163,184,0.2);
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 12px;
+  color: #CBD5E1;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 200ms var(--ease-out-cubic);
+  z-index: 20;
+  min-width: 140px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+.tooltip.visible { opacity: 1; }
+.tooltip .tt-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 2px 0;
+}
+.tooltip .tt-label { color: #64748B; }
+.tooltip .tt-value { color: #F1F5F9; font-weight: 500; }
+.tooltip .tt-value.green { color: var(--success); }
+.tooltip .tt-value.blue { color: var(--accent); }
+
+/* ===== Legend ===== */
+.legend {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  z-index: 10;
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  color: #64748B;
+  animation: hud-enter 500ms var(--ease-out-cubic) 500ms both;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.legend-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+}
+
+/* ===== Side Panels ===== */
+.panel {
+  position: absolute;
+  top: 0;
+  z-index: 30;
+  height: 100%;
+  background: var(--shell-surface);
+  border-right: 1px solid var(--shell-border);
+  box-shadow: 4px 0 24px rgba(0,0,0,0.08);
+  transform: translateX(-100%);
+  transition: transform 250ms var(--ease-out-cubic);
+  width: 220px;
+  overflow-y: auto;
+}
+.panel.open { transform: translateX(0); }
+.panel.right-panel {
+  right: 0;
+  border-right: none;
+  border-left: 1px solid var(--shell-border);
+  transform: translateX(100%);
+  width: 300px;
+}
+.panel.right-panel.open { transform: translateX(0); }
+.panel-header {
+  padding: 16px;
+  border-bottom: 1px solid var(--shell-border);
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.panel-list { padding: 8px; }
+.panel-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: grab;
+  transition: all 150ms;
+  font-size: 13px;
+}
+.panel-item:hover { background: #F1F5F9; }
+.panel-item:active { cursor: grabbing; }
+.panel-item .pi-icon {
+  width: 28px; height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center; justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+/* ===== Empty State Demo ===== */
+.empty-state {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 500ms;
+}
+.empty-state.show { opacity: 1; pointer-events: auto; }
+.empty-state svg { width: 200px; height: 120px; margin-bottom: 20px; }
+.empty-state h3 {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  color: #CBD5E1;
+  margin-bottom: 8px;
+}
+.empty-state p {
+  font-size: 13px;
+  color: #64748B;
+}
+
+/* ===== Success Ripple ===== */
+.success-ripple {
+  position: absolute;
+  border-radius: 50%;
+  border: 2px solid var(--success);
+  width: 10px; height: 10px;
+  pointer-events: none;
+  animation: ripple-out 700ms ease-out forwards;
+  z-index: 5;
+}
+@keyframes ripple-out {
+  0% { transform: scale(1); opacity: 0.7; }
+  100% { transform: scale(6); opacity: 0; }
+}
+
+/* ===== Failure Shake ===== */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+.node.shake { animation: shake 350ms ease-in-out; }
+
+/* ===== Scrollbar ===== */
+.panel::-webkit-scrollbar { width: 4px; }
+.panel::-webkit-scrollbar-track { background: transparent; }
+.panel::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
+
+/* ===== Responsive ===== */
+@media (max-width: 1024px) { .legend { display: none; } }
+</style>
+</head>
+<body>
+
+<!-- Top Nav -->
+<nav class="nav">
+  <div class="nav-logo">
+    <span>⚡</span> Agent<span>Workflow</span>
+  </div>
+  <div class="nav-links">
+    <a href="#" style="color:var(--text-primary);font-weight:500;">工作流</a>
+    <a href="#">模板</a>
+    <a href="#">执行历史</a>
+    <a href="#">文档</a>
+  </div>
+  <div class="nav-right">
+    <span style="font-size:12px;color:var(--text-muted);">v0.1.0</span>
+    <div class="avatar">Y</div>
+  </div>
+</nav>
+
+<!-- Main -->
+<div class="main">
+
+  <!-- Canvas -->
+  <div class="canvas-area" id="canvasArea">
+    <div class="canvas-bg"></div>
+    <div class="canvas-vignette"></div>
+    <svg class="connections-svg" id="connectionsSvg"></svg>
+    <div class="canvas-content" id="canvasContent"></div>
+
+    <!-- Panel Toggles -->
+    <button class="panel-toggle left" id="toggleLeft" title="节点面板">≡</button>
+    <button class="panel-toggle right" id="toggleRight" title="配置面板">⚙</button>
+
+    <!-- Empty State (shown when no workflows) -->
+    <div class="empty-state show" id="emptyState">
+      <svg viewBox="0 0 200 120" id="emptyDemoSvg">
+        <defs>
+          <linearGradient id="emptyGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#818CF8" stop-opacity="0.8"/>
+            <stop offset="100%" stop-color="#818CF8" stop-opacity="0.3"/>
+          </linearGradient>
+          <linearGradient id="emptyGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#22D3EE" stop-opacity="0.8"/>
+            <stop offset="100%" stop-color="#22D3EE" stop-opacity="0.3"/>
+          </linearGradient>
+        </defs>
+        <!-- Demo DAG nodes -->
+        <rect x="10" y="40" width="44" height="24" rx="8" fill="#1E293B" stroke="#818CF8" stroke-width="1.5" class="empty-node" style="animation:empty-node-in 500ms ease-out 0ms both"/>
+        <text x="32" y="55" text-anchor="middle" fill="#818CF8" font-size="9" font-family="Inter" class="empty-node" style="animation:empty-node-in 500ms ease-out 0ms both">📊 数据源</text>
+        <rect x="78" y="40" width="44" height="24" rx="8" fill="#1E293B" stroke="#34D399" stroke-width="1.5" class="empty-node" style="animation:empty-node-in 500ms ease-out 150ms both"/>
+        <text x="100" y="55" text-anchor="middle" fill="#34D399" font-size="9" font-family="Inter" class="empty-node" style="animation:empty-node-in 500ms ease-out 150ms both">🤖 LLM</text>
+        <rect x="146" y="40" width="44" height="24" rx="8" fill="#1E293B" stroke="#FBBF24" stroke-width="1.5" class="empty-node" style="animation:empty-node-in 500ms ease-out 300ms both"/>
+        <text x="168" y="55" text-anchor="middle" fill="#FBBF24" font-size="9" font-family="Inter" class="empty-node" style="animation:empty-node-in 500ms ease-out 300ms both">📬 输出</text>
+        <!-- Connections -->
+        <line x1="54" y1="52" x2="78" y2="52" stroke="rgba(129,140,248,0.3)" stroke-width="1.5" class="empty-conn" style="animation:empty-conn-in 400ms ease-out 500ms both"/>
+        <line x1="122" y1="52" x2="146" y2="52" stroke="rgba(52,211,153,0.3)" stroke-width="1.5" class="empty-conn" style="animation:empty-conn-in 400ms ease-out 650ms both"/>
+        <!-- Flow particles -->
+        <circle r="3" fill="#818CF8" class="empty-particle" style="animation:empty-flow 2s linear 0.8s infinite"/>
+        <circle r="3" fill="#34D399" class="empty-particle" style="animation:empty-flow 2s linear 1.0s infinite"/>
+        <style>
+          @keyframes empty-node-in { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
+          @keyframes empty-conn-in { from { opacity: 0; } to { opacity: 1; } }
+          @keyframes empty-flow {
+            0% { opacity: 0; }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { opacity: 0; }
+          }
+        </style>
+      </svg>
+      <h3>你的第一个工作流</h3>
+      <p>从左侧面板拖拽节点到画布，连线搭建自动化管线</p>
+    </div>
+
+    <!-- HUD -->
+    <div class="hud">
+      <div class="hud-item"><span class="hud-dot green"></span> 已保存</div>
+      <div class="hud-item"><span class="hud-dot blue"></span> 自动</div>
+      <div class="hud-item">节点: 3</div>
+      <div class="hud-item" style="color:#64748B;">边: 2</div>
+      <div class="hud-item" style="color:var(--primary);cursor:pointer;">↩</div>
+      <div class="hud-item" style="color:var(--text-muted);cursor:pointer;">↪</div>
+    </div>
+
+    <!-- Legend -->
+    <div class="legend">
+      <div class="legend-item"><span class="legend-dot" style="background:var(--node-llm);"></span> LLM</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--node-tool);"></span> Tool</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--node-cond);"></span> Condition</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--node-loop);"></span> Loop</div>
+    </div>
+  </div>
+
+  <!-- Left Panel -->
+  <div class="panel" id="leftPanel">
+    <div class="panel-header">节点类型</div>
+    <div class="panel-list">
+      <div class="panel-item draggable" data-type="llm">
+        <div class="pi-icon" style="background:rgba(129,140,248,0.15);color:var(--node-llm);">🧠</div>
+        <div><div style="font-weight:500;">LLM</div><div style="font-size:11px;color:var(--text-muted);">大语言模型调用</div></div>
+      </div>
+      <div class="panel-item draggable" data-type="tool">
+        <div class="pi-icon" style="background:rgba(251,191,36,0.15);color:var(--node-tool);">🔧</div>
+        <div><div style="font-weight:500;">Tool</div><div style="font-size:11px;color:var(--text-muted);">工具函数调用</div></div>
+      </div>
+      <div class="panel-item draggable" data-type="condition">
+        <div class="pi-icon" style="background:rgba(52,211,153,0.15);color:var(--node-cond);">🔀</div>
+        <div><div style="font-weight:500;">Condition</div><div style="font-size:11px;color:var(--text-muted);">条件分支</div></div>
+      </div>
+      <div class="panel-item draggable" data-type="loop">
+        <div class="pi-icon" style="background:rgba(167,139,250,0.15);color:var(--node-loop);">🔄</div>
+        <div><div style="font-weight:500;">Loop</div><div style="font-size:11px;color:var(--text-muted);">循环迭代</div></div>
+      </div>
+      <div class="panel-item draggable" data-type="retriever">
+        <div class="pi-icon" style="background:rgba(34,211,238,0.15);color:var(--node-retriever);">🔍</div>
+        <div><div style="font-weight:500;">Retriever</div><div style="font-size:11px;color:var(--text-muted);">知识库检索</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Panel -->
+  <div class="panel right-panel" id="rightPanel">
+    <div class="panel-header">
+      <span>节点配置</span>
+      <span style="color:var(--text-muted);font-weight:400;font-size:11px;">摘要生成</span>
+    </div>
+    <div style="padding:16px;display:flex;flex-direction:column;gap:12px;">
+      <div><label style="font-size:11px;color:var(--text-secondary);display:block;margin-bottom:4px;">节点名称</label>
+        <input value="AI 总结" style="width:100%;padding:7px 10px;border:1px solid var(--shell-border);border-radius:6px;font-size:13px;font-family:Inter;"></div>
+      <div><label style="font-size:11px;color:var(--text-secondary);display:block;margin-bottom:4px;">System Prompt</label>
+        <textarea rows="4" style="width:100%;padding:7px 10px;border:1px solid var(--shell-border);border-radius:6px;font-size:12px;font-family:'JetBrains Mono',monospace;resize:vertical;">你是一个智能助手，请根据输入内容生成简洁摘要。</textarea></div>
+      <div><label style="font-size:11px;color:var(--text-secondary);display:block;margin-bottom:4px;">Temperature</label>
+        <input type="range" min="0" max="2" step="0.1" value="0.7" style="width:100%;"></div>
+      <div style="display:flex;gap:8px;">
+        <button style="flex:1;padding:8px;background:var(--primary);color:white;border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;font-family:Inter;">保存</button>
+        <button style="padding:8px 12px;background:transparent;color:var(--text-secondary);border:1px solid var(--shell-border);border-radius:6px;font-size:12px;cursor:pointer;font-family:Inter;">取消</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== Panel Toggles =====
+const leftPanel = document.getElementById('leftPanel');
+const rightPanel = document.getElementById('rightPanel');
+document.getElementById('toggleLeft').addEventListener('click', () => leftPanel.classList.toggle('open'));
+document.getElementById('toggleRight').addEventListener('click', () => rightPanel.classList.toggle('open'));
+
+// ===== Demo Nodes =====
+const nodeTypes = {
+  llm: { icon: '🧠', color: 'var(--node-llm)', name: 'AI 总结', desc: 'LLM 节点 · 智能分析', label: 'LLM' },
+  tool: { icon: '🔧', color: 'var(--node-tool)', name: '发送通知', desc: 'Tool 节点 · Webhook', label: 'Tool' },
+  condition: { icon: '🔀', color: 'var(--node-cond)', name: '条件判断', desc: 'Condition · > 阈值', label: 'Cond' },
+};
+
+const positions = [
+  { x: 80, y: 120 },   // LLM
+  { x: 300, y: 140 },  // Tool
+  { x: 80, y: 280 },   // Condition
+];
+
+const nodeIds = [];
+let nodeCount = 0;
+
+Object.entries(nodeTypes).forEach(([type, info], i) => {
+  const id = `node-${++nodeCount}`;
+  nodeIds.push(id);
+  const pos = positions[i] || { x: 100 + i * 120, y: 150 + i * 80 };
+
+  const div = document.createElement('div');
+  div.className = `node-container`;
+  div.id = id;
+  div.style.left = pos.x + 'px';
+  div.style.top = pos.y + 'px';
+  div.dataset.type = type;
+
+  div.innerHTML = `
+    <div class="node node-${type} breathing">
+      <div class="node-badge running" id="badge-${id}"></div>
+      <div class="node-header">
+        <div class="node-icon">${info.icon}</div>
+        <div class="node-name">${info.name}</div>
+      </div>
+      <div class="node-desc">${info.desc}</div>
+    </div>
+    <div class="tooltip" id="tooltip-${id}">
+      <div class="tt-row"><span class="tt-label">状态</span><span class="tt-value blue">运行中</span></div>
+      <div class="tt-row"><span class="tt-label">耗时</span><span class="tt-value">1.2s</span></div>
+      <div class="tt-row"><span class="tt-label">Tokens</span><span class="tt-value">1,024</span></div>
+    </div>
+  `;
+
+  // Hover tooltip
+  const nodeEl = div.querySelector('.node');
+  const tip = div.querySelector('.tooltip');
+  nodeEl.addEventListener('mouseenter', () => {
+    tip.classList.add('visible');
+    const rect = nodeEl.getBoundingClientRect();
+    const canvasRect = document.getElementById('canvasArea').getBoundingClientRect();
+    tip.style.left = (rect.right - canvasRect.left + 12) + 'px';
+    tip.style.top = (rect.top - canvasRect.top) + 'px';
+  });
+  nodeEl.addEventListener('mouseleave', () => tip.classList.remove('visible'));
+
+  // Click ripple
+  nodeEl.addEventListener('click', (e) => {
+    const ripple = document.createElement('div');
+    ripple.className = 'success-ripple';
+    const canvasRect = document.getElementById('canvasArea').getBoundingClientRect();
+    const rect = nodeEl.getBoundingClientRect();
+    ripple.style.left = (rect.left - canvasRect.left + rect.width/2 - 5) + 'px';
+    ripple.style.top = (rect.top - canvasRect.top + rect.height/2 - 5) + 'px';
+    document.getElementById('canvasContent').appendChild(ripple);
+    setTimeout(() => ripple.remove(), 700);
+  });
+
+  document.getElementById('canvasContent').appendChild(div);
+});
+
+// ===== SVG Connections =====
+const svg = document.getElementById('connectionsSvg');
+function updateConnections() {
+  svg.innerHTML = '';
+  const pairs = [
+    [nodeIds[0], nodeIds[1]],
+    [nodeIds[0], nodeIds[2]],
+  ];
+  pairs.forEach(([fromId, toId], idx) => {
+    const from = document.getElementById(fromId);
+    const to = document.getElementById(toId);
+    if (!from || !to) return;
+
+    const canvasRect = document.getElementById('canvasArea').getBoundingClientRect();
+    const fromRect = from.getBoundingClientRect();
+    const toRect = to.getBoundingClientRect();
+
+    const x1 = fromRect.left - canvasRect.left + fromRect.width / 2;
+    const y1 = fromRect.top - canvasRect.top + fromRect.height;
+    const x2 = toRect.left - canvasRect.left + toRect.width / 2;
+    const y2 = toRect.top - canvasRect.top;
+
+    const cy = (y1 + y2) / 2;
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    const d = `M ${x1} ${y1} C ${x1} ${cy}, ${x2} ${cy}, ${x2} ${y2}`;
+    path.setAttribute('d', d);
+    path.classList.add('conn-line', 'flowing');
+    path.setAttribute('data-from', fromId);
+    svg.appendChild(path);
+  });
+}
+updateConnections();
+window.addEventListener('resize', updateConnections);
+
+// ===== Flow Particles =====
+class FlowParticle {
+  constructor(pathEl, color, delay = 0) {
+    this.pathEl = pathEl;
+    this.length = pathEl.getTotalLength();
+    this.progress = Math.random();
+    this.speed = 0.004 + Math.random() * 0.003;
+    this.color = color;
+    this.delay = delay;
+    this.el = document.createElement('div');
+    this.el.className = 'flow-particle';
+    this.el.style.background = color;
+    this.el.style.boxShadow = `0 0 8px ${color}`;
+    this.el.style.width = (3 + Math.random() * 3) + 'px';
+    this.el.style.height = this.el.style.width;
+    document.getElementById('canvasContent').appendChild(this.el);
+  }
+  update() {
+    this.progress += this.speed;
+    if (this.progress >= 1) this.progress = 0;
+    try {
+      const len = this.progress * this.length;
+      const pt = this.pathEl.getPointAtLength(len);
+      const canvasRect = document.getElementById('canvasArea').getBoundingClientRect();
+      this.el.style.left = (pt.x - parseInt(this.el.style.width)/2) + 'px';
+      this.el.style.top = (pt.y - parseInt(this.el.style.height)/2) + 'px';
+      // Trail effect via opacity
+      const trail = 1 - Math.abs(this.progress - 0.5) * 1.6;
+      this.el.style.opacity = Math.max(0.2, trail);
+      this.el.style.transform = `scale(${0.6 + trail * 0.4})`;
+    } catch(e) {}
+  }
+  remove() { this.el.remove(); }
+}
+
+const particles = [];
+const colors = ['#818CF8', '#818CF8', '#22D3EE', '#818CF8', '#A78BFA'];
+
+// Create particles for each path
+setTimeout(() => {
+  const paths = svg.querySelectorAll('path');
+  paths.forEach((path, i) => {
+    for (let p = 0; p < 4; p++) {
+      particles.push(new FlowParticle(path, colors[(i * 4 + p) % colors.length], p * 0.1));
+    }
+  });
+  
+  function animateParticles() {
+    particles.forEach(p => p.update());
+    requestAnimationFrame(animateParticles);
+  }
+  animateParticles();
+}, 300);
+
+// ===== Draggable from Panel =====
+document.querySelectorAll('.draggable').forEach(el => {
+  el.addEventListener('dragstart', (e) => {
+    e.dataTransfer.setData('text/plain', el.dataset.type);
+  });
+  el.draggable = true;
+});
+
+const canvasArea = document.getElementById('canvasArea');
+canvasArea.addEventListener('dragover', (e) => e.preventDefault());
+canvasArea.addEventListener('drop', (e) => {
+  e.preventDefault();
+  const type = e.dataTransfer.getData('text/plain');
+  if (!type || !nodeTypes[type]) return;
+
+  const canvasRect = canvasArea.getBoundingClientRect();
+  const x = e.clientX - canvasRect.left - 84;
+  const y = e.clientY - canvasRect.top - 30;
+  const id = `node-${++nodeCount}`;
+
+  const info = nodeTypes[type];
+  const div = document.createElement('div');
+  div.className = 'node-container';
+  div.id = id;
+  div.style.left = x + 'px';
+  div.style.top = y + 'px';
+  div.dataset.type = type;
+  div.innerHTML = `
+    <div class="node node-${type} breathing">
+      <div class="node-badge running" id="badge-${id}"></div>
+      <div class="node-header">
+        <div class="node-icon">${info.icon}</div>
+        <div class="node-name">${info.name}</div>
+      </div>
+      <div class="node-desc">${info.desc}</div>
+    </div>
+  `;
+  document.getElementById('canvasContent').appendChild(div);
+  // Re-trigger animation
+  div.style.animation = 'none';
+  div.offsetHeight;
+  div.style.animation = '';
+
+  // Hide empty state
+  document.getElementById('emptyState').classList.remove('show');
+
+  // Update connections
+  nodeIds.push(id);
+  setTimeout(updateConnections, 100);
+});
+
+// ===== Simulate State Change: toggle badge state every 5s =====
+let stateToggle = false;
+setInterval(() => {
+  stateToggle = !stateToggle;
+  const badges = document.querySelectorAll('.node-badge');
+  badges.forEach((badge, i) => {
+    badge.className = 'node-badge';
+    if (stateToggle) {
+      if (i === 0) badge.classList.add('success');
+      else if (i === 1) badge.classList.add('running');
+      else badge.classList.add('failed');
+    } else {
+      badge.classList.add('running');
+    }
+  });
+
+  // Simulate success ripple on first node
+  if (stateToggle) {
+    const firstNode = document.getElementById(nodeIds[0]);
+    if (firstNode) {
+      const ripple = document.createElement('div');
+      ripple.className = 'success-ripple';
+      const canvasRect = canvasArea.getBoundingClientRect();
+      const rect = firstNode.getBoundingClientRect();
+      ripple.style.left = (rect.left - canvasRect.left + rect.width/2 - 5) + 'px';
+      ripple.style.top = (rect.top - canvasRect.top + rect.height/2 - 5) + 'px';
+      document.getElementById('canvasContent').appendChild(ripple);
+      setTimeout(() => ripple.remove(), 700);
+    }
+  }
+}, 5000);
+
+// ===== Shake nodes on failure =====
+setTimeout(() => {
+  setInterval(() => {
+    const lastNode = document.getElementById(nodeIds[2]);
+    if (lastNode) {
+      const nodeEl = lastNode.querySelector('.node');
+      nodeEl.classList.add('shake');
+      setTimeout(() => nodeEl.classList.remove('shake'), 400);
+    }
+  }, 8000);
+}, 3000);
+
+console.log('✨ Agent Workflow Design Prototype loaded');
+console.log('🎯 Signature: Flow particles on connections');
+console.log('🔮 Effects: node-breath, ripple, shake, panel-slide, HUD');
+</script>
+</body>
+</html>

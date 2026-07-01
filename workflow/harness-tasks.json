@@ -1,0 +1,248 @@
+﻿{
+    "version":  2,
+    "session_config":  {
+                           "max_tasks_per_session":  20,
+                           "max_sessions":  50,
+                           "concurrency_mode":  "exclusive"
+                       },
+    "tasks":  [
+                  {
+                      "error_log":  [
+
+                                    ],
+                      "id":  "task-001",
+                      "completed_at":  null,
+                      "checkpoints":  [
+
+                                      ],
+                      "validation":  {
+                                         "command":  "npm.cmd run build",
+                                         "timeout_seconds":  120
+                                     },
+                      "max_attempts":  3,
+                      "attempts":  0,
+                      "status":  "pending",
+                      "depends_on":  [
+                                         "task-000"
+                                     ],
+                      "title":  "API 封装层 + 登录页 + 路由守卫",
+                      "priority":  "P0",
+                      "started_at_commit":  null
+                  },
+                  {
+                      "error_log":  [
+
+                                    ],
+                      "id":  "task-002",
+                      "completed_at":  null,
+                      "checkpoints":  [
+
+                                      ],
+                      "validation":  {
+                                         "command":  "npm.cmd run build",
+                                         "timeout_seconds":  120
+                                     },
+                      "max_attempts":  3,
+                      "attempts":  0,
+                      "status":  "pending",
+                      "depends_on":  [
+                                         "task-000",
+                                         "task-001"
+                                     ],
+                      "title":  "工作流列表页",
+                      "priority":  "P0",
+                      "started_at_commit":  null
+                  },
+                  {
+                      "error_log":  [
+
+                                    ],
+                      "id":  "task-003",
+                      "completed_at":  null,
+                      "checkpoints":  [
+
+                                      ],
+                      "validation":  {
+                                         "command":  "npm.cmd run build",
+                                         "timeout_seconds":  120
+                                     },
+                      "max_attempts":  3,
+                      "attempts":  0,
+                      "status":  "pending",
+                      "depends_on":  [
+                                         "task-000"
+                                     ],
+                      "title":  "画布编辑器 — 参数面板 + 连线校验",
+                      "priority":  "P0",
+                      "started_at_commit":  null
+                  },
+                  {
+                      "error_log":  [
+
+                                    ],
+                      "id":  "task-004",
+                      "completed_at":  null,
+                      "checkpoints":  [
+
+                                      ],
+                      "validation":  {
+                                         "command":  "npm.cmd run build",
+                                         "timeout_seconds":  120
+                                     },
+                      "max_attempts":  3,
+                      "attempts":  0,
+                      "status":  "pending",
+                      "depends_on":  [
+                                         "task-003"
+                                     ],
+                      "title":  "画布编辑器 — DSL 双向同步 (Monaco Editor)",
+                      "priority":  "P1",
+                      "started_at_commit":  null
+                  },
+                  {
+                      "error_log":  [
+
+                                    ],
+                      "id":  "task-005",
+                      "completed_at":  null,
+                      "checkpoints":  [
+
+                                      ],
+                      "validation":  {
+                                         "command":  "npm.cmd run build",
+                                         "timeout_seconds":  120
+                                     },
+                      "max_attempts":  3,
+                      "attempts":  0,
+                      "status":  "pending",
+                      "depends_on":  [
+                                         "task-001",
+                                         "task-002"
+                                     ],
+                      "title":  "任务触发 + 任务列表页",
+                      "priority":  "P1",
+                      "started_at_commit":  null
+                  },
+                  {
+                      "error_log":  [
+
+                                    ],
+                      "id":  "task-006",
+                      "completed_at":  null,
+                      "checkpoints":  [
+
+                                      ],
+                      "validation":  {
+                                         "command":  "npm.cmd run build",
+                                         "timeout_seconds":  120
+                                     },
+                      "max_attempts":  3,
+                      "attempts":  0,
+                      "status":  "pending",
+                      "depends_on":  [
+                                         "task-005"
+                                     ],
+                      "title":  "任务详情页 (DAG 拓扑 + 节点详情 + 时间轴)",
+                      "priority":  "P1",
+                      "started_at_commit":  null
+                  },
+                  {
+                      "error_log":  [
+
+                                    ],
+                      "id":  "task-007",
+                      "completed_at":  null,
+                      "checkpoints":  [
+
+                                      ],
+                      "validation":  {
+                                         "command":  "npm.cmd run build",
+                                         "timeout_seconds":  120
+                                     },
+                      "max_attempts":  3,
+                      "attempts":  0,
+                      "status":  "pending",
+                      "depends_on":  [
+                                         "task-000"
+                                     ],
+                      "title":  "模板市场页",
+                      "priority":  "P2",
+                      "started_at_commit":  null
+                  },
+                  {
+                      "error_log":  [
+
+                                    ],
+                      "id":  "task-008",
+                      "completed_at":  null,
+                      "checkpoints":  [
+
+                                      ],
+                      "validation":  {
+                                         "command":  "npm.cmd run build",
+                                         "timeout_seconds":  120
+                                     },
+                      "max_attempts":  3,
+                      "attempts":  0,
+                      "status":  "pending",
+                      "depends_on":  [
+                                         "task-001",
+                                         "task-002"
+                                     ],
+                      "title":  "导入/导出 YAML + 设置页",
+                      "priority":  "P2",
+                      "started_at_commit":  null
+                  },
+                  {
+                      "error_log":  [
+
+                                    ],
+                      "id":  "task-009",
+                      "completed_at":  null,
+                      "checkpoints":  [
+
+                                      ],
+                      "validation":  {
+                                         "command":  "npm.cmd run build",
+                                         "timeout_seconds":  120
+                                     },
+                      "max_attempts":  3,
+                      "attempts":  0,
+                      "status":  "pending",
+                      "depends_on":  [
+                                         "task-006"
+                                     ],
+                      "title":  "重跑/续跑 + 任务取消",
+                      "priority":  "P1",
+                      "started_at_commit":  null
+                  },
+                  {
+                      "error_log":  [
+
+                                    ],
+                      "id":  "task-010",
+                      "completed_at":  null,
+                      "checkpoints":  [
+
+                                      ],
+                      "validation":  {
+                                         "command":  "npm.cmd run build",
+                                         "timeout_seconds":  120
+                                     },
+                      "max_attempts":  3,
+                      "attempts":  0,
+                      "status":  "pending",
+                      "depends_on":  [
+                                         "task-002",
+                                         "task-005",
+                                         "task-007"
+                                     ],
+                      "title":  "边缘情况处理 (空状态 + 错误边界 + 全局异常)",
+                      "priority":  "P2",
+                      "started_at_commit":  null
+                  }
+              ],
+    "created":  "2026-07-01T16:24:30Z",
+    "last_session":  null,
+    "session_count":  0
+}

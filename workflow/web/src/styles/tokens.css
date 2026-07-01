@@ -1,0 +1,91 @@
+﻿/* ===== Design Tokens — Agent Workflow Engine ===== */
+:root {
+  /* Canvas */
+  --canvas-bg: #0F172A;
+  --canvas-grid: #1E293B;
+  --canvas-vignette: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.45) 100%);
+  
+  /* Shell */
+  --shell-bg: #F8FAFC;
+  --shell-surface: #FFFFFF;
+  --shell-border: #E2E8F0;
+  --shell-shadow: 0 4px 24px rgba(0,0,0,0.06);
+  
+  /* Text */
+  --text-primary: #0F172A;
+  --text-secondary: #64748B;
+  --text-muted: #94A3B8;
+  --text-on-canvas: #E2E8F0;
+  --text-on-canvas-muted: #64748B;
+  
+  /* Brand */
+  --primary: #818CF8;
+  --primary-hover: #A5B4FC;
+  --primary-glow: 0 0 24px rgba(129,140,248,0.5);
+  --accent: #22D3EE;
+  --accent-glow: 0 0 32px rgba(34,211,238,0.4);
+  --success: #34D399;
+  --error: #FB7185;
+  --warning: #FBBF24;
+  
+  /* Node Colors (Dark Canvas) */
+  --node-llm: #818CF8;
+  --node-tool: #FBBF24;
+  --node-condition: #34D399;
+  --node-loop: #A78BFA;
+  --node-retriever: #22D3EE;
+  --node-approval: #FB7185;
+  --node-http: #2DD4BF;
+  --node-subworkflow: #A8A29E;
+  
+  /* Status Colors */
+  --status-running: #3B82F6;
+  --status-success: #22C55E;
+  --status-failed: #EF4444;
+  --status-pending: #9CA3AF;
+  --status-skipped: #EAB308;
+  --status-waiting: #F97316;
+  --status-canceled: #6B7280;
+  
+  /* Sizing */
+  --nav-height: 40px;
+  --panel-width: 240px;
+  --panel-right-width: 320px;
+  --hud-bottom: 20px;
+  --sidebar-collapsed: 0px;
+  
+  /* Fonts */
+  --font-display: "DM Sans", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+  --font-code: "JetBrains Mono", "Fira Code", monospace;
+  
+  /* Easing */
+  --ease-out-cubic: cubic-bezier(0.33, 1, 0.68, 1);
+  --ease-elastic: cubic-bezier(0.5, 1.75, 0.5, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+/* Base Reset */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--shell-bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+}
+
+/* Ant Design Overrides */
+.ant-btn-primary {
+  box-shadow: var(--primary-glow) !important;
+}
+.ant-drawer-content-wrapper {
+  box-shadow: none !important;
+}

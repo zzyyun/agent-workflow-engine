@@ -18,18 +18,36 @@ workflow/
 ├── tests/                  # 单元测试
 ├── examples/               # Demo 与示例
 ├── docs/                   # PRD 与设计文档
+├── pyproject.toml          # 项目配置与宽松依赖范围
+├── requirements.txt        # 核心依赖精确锁定
+├── requirements-dev.txt    # 开发依赖精确锁定
 └── README.md
 ```
 
 ## 快速开始
 
 ```bash
-# 安装依赖
+# 方式一：使用 requirements 锁定文件（推荐，CI/团队一致）
+pip install -r requirements.txt
+pip install -r requirements-dev.txt
+
+# 方式二：使用 pyproject.toml（宽松范围，拿最新稳定版）
 pip install -e ".[dev]"
 
 # 运行测试
 pytest tests/ -v --cov=src/agent_engine
+
+# 代码风格检查
+ruff check src/ tests/
 ```
+
+## 依赖版本管理
+
+- **`pyproject.toml`**：声明宽松版本范围（主版本兼容），适合日常开发
+- **`requirements.txt`**：核心依赖精确锁定，适合 CI / 生产部署
+- **`requirements-dev.txt`**：开发依赖精确锁定
+
+升级流程：先在 `pyproject.toml` 中调整下限版本，再将 `requirements*.txt` 中的 `==` 改为新版本。
 
 ## 技术栈
 

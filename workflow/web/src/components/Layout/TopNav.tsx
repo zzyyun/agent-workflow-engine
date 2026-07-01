@@ -1,5 +1,6 @@
 ﻿import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../../store/AuthContext";
 
 const NAV_ITEMS = [
   { label: "Workflows", path: "/workflows" },
@@ -8,11 +9,20 @@ const NAV_ITEMS = [
   { label: "Docs", path: null },
 ];
 
+function closeOnClick(fn: () => void) {
+  return (e: React.MouseEvent) => {
+    e.stopPropagation();
+    fn();
+  };
+}
+
 export function TopNav() {
   const location = useLocation();
   const navigate = useNavigate();
-// const isEditor = location.pathname.startsWith("/editor");
+  const { logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const closeMenu = () => setMenuOpen(false);
 
   return (
     <nav style={{
@@ -40,7 +50,7 @@ export function TopNav() {
           return (
             <a
               key={item.label}
-              onClick={() => item.path && navigate(item.path)}
+              onClick={() => { item.path && navigate(item.path); }}
               style={{
                 color: active ? "var(--text-primary)" : "var(--text-secondary)",
                 fontWeight: active ? 500 : 400,
@@ -79,16 +89,28 @@ export function TopNav() {
               boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
               padding: "4px 0", minWidth: 140, zIndex: 200,
             }}>
-              {["Settings", "API Key", "Logout"].map((item) => (
-                <div
-                  key={item}
-                  style={{ padding: "8px 16px", cursor: "pointer", fontSize: 13, transition: "background 150ms" }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = "#F1F5F9"}
-                  onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
-                >
-                  {item}
-                </div>
-              ))}
+              <div
+                onClick={closeOnClick(() => { navigate("/settings"); closeMenu(); })}
+                style={{ padding: "8px 16px", cursor: "pointer", fontSize: 13, transition: "background 150ms" }}
+                onMouseEnter={(e) => e.currentTarget.style.background = "#F1F5F9"}
+                onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+              >
+                Settings
+              </div>
+              <div
+                onClick={closeOnClick(() => { closeMenu(); })}
+                style={{ padding: "8px 16px", cursor: "pointer", fontSize: 13, transition: "background 150ms", opacity: 0.5 }}
+              >
+                API Key
+              </div>
+              <div
+                onClick={closeOnClick(() => { logout(); navigate("/login"); closeMenu(); })}
+                style={{ padding: "8px 16px", cursor: "pointer", fontSize: 13, transition: "background 150ms", color: "#EF4444" }}
+                onMouseEnter={(e) => e.currentTarget.style.background = "#FEF2F2"}
+                onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+              >
+                Logout
+              </div>
             </div>
           )}
         </div>

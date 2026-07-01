@@ -6,8 +6,9 @@ import { EditorPage } from "./pages/EditorPage";
 import { WorkflowListPage } from "./pages/WorkflowListPage";
 import { RunListPage } from "./pages/RunListPage";
 import { RunDetailPage } from "./pages/RunDetailPage";
-import { LoginPage } from "./pages/LoginPage";
 import { TemplateMarketPage } from "./pages/TemplateMarketPage";
+import { SettingsPage } from "./pages/SettingsPage";
+import { LoginPage } from "./pages/LoginPage";
 
 export default function App() {
   return (
@@ -20,7 +21,9 @@ export default function App() {
           <Route element={<AppLayout />}>
             <Route path="/workflows" element={<WorkflowListPage />} />
             <Route path="/runs" element={<RunListPage />} />
-            <Route path="/runs/:runId" element={<RunDetailPage />} />`n            <Route path="/templates" element={<TemplateMarketPage />} />
+            <Route path="/runs/:runId" element={<RunDetailPage />} />
+            <Route path="/templates" element={<TemplateMarketPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
             <Route path="/editor/:workflowId" element={<EditorPage />} />
             <Route path="/editor/new" element={<EditorPage />} />
           </Route>

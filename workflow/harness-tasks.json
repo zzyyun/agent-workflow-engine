@@ -11,7 +11,7 @@
 
                                     ],
                       "id":  "task-001",
-                      "completed_at":  null,
+                      "completed_at":  "2026-07-01T16:26:23Z",
                       "checkpoints":  [
 
                                       ],
@@ -21,7 +21,7 @@
                                      },
                       "max_attempts":  3,
                       "attempts":  0,
-                      "status":  "in_progress",
+                      "status":  "completed",
                       "depends_on":  [
                                          "task-000"
                                      ],
@@ -68,13 +68,13 @@
                                      },
                       "max_attempts":  3,
                       "attempts":  0,
-                      "status":  "pending",
+                      "status":  "in_progress",
                       "depends_on":  [
                                          "task-000"
                                      ],
                       "title":  "画布编辑器 — 参数面板 + 连线校验",
                       "priority":  "P0",
-                      "started_at_commit":  null
+                      "started_at_commit":  "acbe53b83be74d0700d53f8a8a56e3243f623d43"
                   },
                   {
                       "error_log":  [
@@ -243,6 +243,6 @@
                   }
               ],
     "created":  "2026-07-01T16:24:30Z",
-    "last_session":  null,
+    "last_session":  "2026-07-01T16:26:23Z",
     "session_count":  1
 }

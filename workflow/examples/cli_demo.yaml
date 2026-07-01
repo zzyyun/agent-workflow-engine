@@ -1,0 +1,14 @@
+name: cli_demo
+description: Phase 1.4 端到端 demo（passthrough 节点）
+nodes:
+  - id: step1
+    type: passthrough
+    params:
+      callable: examples.demo_nodes:increment
+  - id: step2
+    type: passthrough
+    depends_on: [step1]
+    params:
+      callable: examples.demo_nodes:double
+entry: step1
+finish: [step2]

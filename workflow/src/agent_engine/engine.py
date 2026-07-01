@@ -112,19 +112,27 @@ class WorkflowEngine:
 
         Args:
             name: 节点名称，在当前引擎内必须唯一。
-            action: 节点处理函数，接收 state 字典，返回 state 更新字典。
+            action: 节点处理函数。接受两种形式：
+                1. 可调用对象 ``Callable[[dict], dict]``（普通函数 / NodeAdapter 子类）。
+                2. LangChain ``Runnable``（通过 duck typing 检查 ``invoke`` 方法，
+                   LangChain 1.x 的 ``RunnableLambda`` 不再是 callable，必须这样传入）。
 
         Returns:
             self，便于链式调用。
 
         Raises:
             NodeAlreadyExistsError: 节点名称已被占用。
-            ValueError: 名称非法或 action 不是可调用对象。
+            ValueError: 名称非法或 action 既不可调用也无 invoke 方法。
         """
         if not name or not isinstance(name, str):
             raise ValueError(f"节点名称必须为非空字符串，实际值: {name!r}")
-        if not callable(action):
-            raise ValueError(f"节点 action 必须是可调用对象, 实际类型: {type(action).__name__}")
+        # 兼容 LangChain Runnable：callable 或有 invoke 方法即可
+        is_runnable = hasattr(action, "invoke") and callable(getattr(action, "invoke", None))
+        if not (callable(action) or is_runnable):
+            raise ValueError(
+                f"节点 action 必须是可调用对象或 LangChain Runnable, "
+                f"实际类型: {type(action).__name__}"
+            )
         if name in self._nodes:
             raise NodeAlreadyExistsError(f"节点 {name!r} 已存在，无法重复注册")
         # START / END 是 LangGraph 保留字，禁止作为节点名

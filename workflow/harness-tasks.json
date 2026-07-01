@@ -44,21 +44,21 @@
                                      },
                       "max_attempts":  3,
                       "attempts":  0,
-                      "status":  "pending",
+                      "status":  "in_progress",
                       "depends_on":  [
                                          "task-000",
                                          "task-001"
                                      ],
                       "title":  "工作流列表页",
                       "priority":  "P0",
-                      "started_at_commit":  null
+                      "started_at_commit":  "f19021b"
                   },
                   {
                       "error_log":  [
 
                                     ],
                       "id":  "task-003",
-                      "completed_at":  null,
+                      "completed_at":  "2026-07-01T16:29:08Z",
                       "checkpoints":  [
 
                                       ],
@@ -68,7 +68,7 @@
                                      },
                       "max_attempts":  3,
                       "attempts":  0,
-                      "status":  "in_progress",
+                      "status":  "completed",
                       "depends_on":  [
                                          "task-000"
                                      ],
@@ -243,6 +243,6 @@
                   }
               ],
     "created":  "2026-07-01T16:24:30Z",
-    "last_session":  "2026-07-01T16:26:23Z",
+    "last_session":  "2026-07-01T16:29:08Z",
     "session_count":  1
 }

@@ -21,13 +21,13 @@
                                      },
                       "max_attempts":  3,
                       "attempts":  0,
-                      "status":  "pending",
+                      "status":  "in_progress",
                       "depends_on":  [
                                          "task-000"
                                      ],
                       "title":  "API 封装层 + 登录页 + 路由守卫",
                       "priority":  "P0",
-                      "started_at_commit":  null
+                      "started_at_commit":  "2b87029"
                   },
                   {
                       "error_log":  [
@@ -244,5 +244,5 @@
               ],
     "created":  "2026-07-01T16:24:30Z",
     "last_session":  null,
-    "session_count":  0
+    "session_count":  1
 }

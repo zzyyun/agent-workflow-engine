@@ -27,3 +27,12 @@ venv/
 # 数据与日志
 *.log
 data/
+
+# Harness 本地工具（不纳入版本控制）
+harness-progress.txt
+harness-tasks.json
+harness-tasks.json.bak
+harness-tasks.json.tmp
+harness-init.sh
+harness_*.py
+.harness-active
